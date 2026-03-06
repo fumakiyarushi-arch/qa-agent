@@ -1,0 +1,6 @@
+.env.linear
+qa-reports/
+node_modules/
+.DS_Store
+*.log
+.gemini/
