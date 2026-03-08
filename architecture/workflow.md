@@ -92,6 +92,21 @@ This report can be shared with the development team for debugging and fixing the
 
 ---
 
+## Step 6 – UI Design Testing
+
+The UI Design Test Agent evaluates the user interface for design quality and usability.
+
+The agent checks:
+
+* Visual layout and hierarchy
+* Button and input field styling
+* Responsiveness for different devices
+* Feedback and error state presentation
+
+Design issues are documented and included in the final QA report.
+
+---
+
 ## Final Output
 
 The QA Agentic Workflow produces the following outputs:
@@ -99,4 +114,5 @@ The QA Agentic Workflow produces the following outputs:
 * Generated API test cases
 * API execution results
 * Test pass/fail analysis
+* UI design evaluation
 * Bug reports for detected issues

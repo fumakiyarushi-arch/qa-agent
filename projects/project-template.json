@@ -1,0 +1,42 @@
+{
+  "projectName": "PROJECT_NAME",
+  "clientName": "CLIENT_NAME",
+  "auth": {
+    "baseUrl": "https://api-stage.example.com/v1/auth",
+    "endpoints": {
+      "signup": "/signup",
+      "login": "/login",
+      "forgotPassword": "/forgot-password"
+    }
+  },
+  "ui": {
+    "baseUrl": "https://staging.example.com",
+    "pages": [
+      { "name": "Root", "path": "/" },
+      { "name": "Signup", "path": "/signup" },
+      { "name": "Login", "path": "/login" },
+      { "name": "Forgot Password", "path": "/forgot-password" }
+    ],
+    "branding": {
+      "primaryColor": "#HEX_CODE",
+      "theme": "dark|light"
+    }
+  },
+  "linear": {
+    "teamId": "YOUR_TEAM_ID",
+    "projectId": "YOUR_PROJECT_ID",
+    "defaultAssigneeId": "ASSIGNEE_ID",
+    "bugLabelId": "BUG_LABEL_ID"
+  },
+  "testScenarios": {
+    "signup": [
+      { "name": "Signup - Valid", "body": { "role":"individual", "email":"test@example.com", "password":"Password@123" }, "expected": 201, "scenario": "Valid signup" }
+    ],
+    "login": [
+      { "name": "Login - Valid", "body": { "email":"test@example.com", "password":"Password@123" }, "expected": 200, "scenario": "Valid login" }
+    ],
+    "forgotPassword": [
+      { "name": "Forgot Password - Valid", "body": { "email":"test@example.com" }, "expected": 200, "scenario": "Valid forgot password" }
+    ]
+  }
+}

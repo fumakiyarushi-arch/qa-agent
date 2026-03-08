@@ -1,0 +1,56 @@
+{
+  "projectName": "Seal My Idea",
+  "clientName": "Swiss Trust Layer",
+  "auth": {
+    "baseUrl": "https://api-stage.swisstrustlayer.com/seal-my-idea/v1/auth",
+    "endpoints": {
+      "signup": "/signup",
+      "login": "/login",
+      "forgotPassword": "/forgot-password"
+    }
+  },
+  "ui": {
+    "baseUrl": "https://staging.swisstrustlayer.com",
+    "pages": [
+      { "name": "Root", "path": "/" },
+      { "name": "Signup", "path": "/signup" },
+      { "name": "Login", "path": "/login" },
+      { "name": "Forgot Password", "path": "/forgot-password" }
+    ],
+    "branding": {
+      "primaryColor": "#1E3A8A",
+      "theme": "dark"
+    }
+  },
+  "linear": {
+    "teamId": "806495c0-038c-4a39-9610-ea5f279f6044",
+    "projectId": "8eaad85a-0d17-4780-928d-56540c749033",
+    "defaultAssigneeId": "1c022279-12c1-47cf-98f4-97d23f9608b8",
+    "bugLabelId": "7702c998-d45b-47dd-ae06-4439693f8b98"
+  },
+  "testScenarios": {
+    "signup": [
+      { "name": "Signup - Valid", "body": "{\"role\":\"individual\",\"platform\":\"web\",\"fullname\":\"Virat Kohli\",\"email\":\"virat_india@yopmail.com\",\"password\":\"Test@123\",\"mobile_number\":\"2025550001\",\"country_code\":\"+1\"}", "expected": 201, "scenario": "Valid signup request" },
+      { "name": "Signup - Missing Email", "body": "{\"role\":\"individual\",\"platform\":\"web\",\"fullname\":\"Test User\",\"password\":\"Test@123\",\"mobile_number\":\"2025550002\",\"country_code\":\"+1\"}", "expected": 400, "scenario": "Missing email field" },
+      { "name": "Signup - Missing Password", "body": "{\"role\":\"individual\",\"platform\":\"web\",\"fullname\":\"Test User\",\"email\":\"test2@yopmail.com\",\"mobile_number\":\"2025550002\",\"country_code\":\"+1\"}", "expected": 400, "scenario": "Missing password field" },
+      { "name": "Signup - Invalid Email", "body": "{\"role\":\"individual\",\"platform\":\"web\",\"fullname\":\"Test User\",\"email\":\"invalid-email\",\"password\":\"Test@123\",\"mobile_number\":\"2025550003\",\"country_code\":\"+1\"}", "expected": 400, "scenario": "Invalid email format" },
+      { "name": "Signup - Weak Password", "body": "{\"role\":\"individual\",\"platform\":\"web\",\"fullname\":\"Test User\",\"email\":\"test3@yopmail.com\",\"password\":\"123\",\"mobile_number\":\"2025550004\",\"country_code\":\"+1\"}", "expected": 400, "scenario": "Weak password" },
+      { "name": "Signup - Missing Fullname", "body": "{\"role\":\"individual\",\"platform\":\"web\",\"email\":\"test4@yopmail.com\",\"password\":\"Test@123\",\"mobile_number\":\"2025550005\",\"country_code\":\"+1\"}", "expected": 400, "scenario": "Missing fullname field" }
+    ],
+    "login": [
+      { "name": "Login - Valid", "body": "{\"email\":\"virat_india@yopmail.com\",\"password\":\"Test@123\",\"role\":\"individual\"}", "expected": 200, "scenario": "Valid login request" },
+      { "name": "Login - Invalid Email", "body": "{\"email\":\"notfound@yopmail.com\",\"password\":\"Test@123\",\"role\":\"individual\"}", "expected": 401, "scenario": "Invalid email" },
+      { "name": "Login - Invalid Password", "body": "{\"email\":\"virat_india@yopmail.com\",\"password\":\"WrongPass123\",\"role\":\"individual\"}", "expected": 401, "scenario": "Invalid password" },
+      { "name": "Login - Missing Email", "body": "{\"password\":\"Test@123\",\"role\":\"individual\"}", "expected": 400, "scenario": "Missing email field" },
+      { "name": "Login - Missing Password", "body": "{\"email\":\"virat_india@yopmail.com\",\"role\":\"individual\"}", "expected": 400, "scenario": "Missing password field" },
+      { "name": "Login - Empty Body", "body": "{}", "expected": 400, "scenario": "Empty request body" }
+    ],
+    "forgotPassword": [
+      { "name": "Forgot Password - Valid Email", "body": "{\"email\":\"virat_india@yopmail.com\"}", "expected": 200, "scenario": "Valid email for password reset" },
+      { "name": "Forgot Password - Invalid Email", "body": "{\"email\":\"notexists@yopmail.com\"}", "expected": 404, "scenario": "Non-existent email" },
+      { "name": "Forgot Password - Missing Email", "body": "{}", "expected": 400, "scenario": "Missing email field" },
+      { "name": "Forgot Password - Invalid Email Format", "body": "{\"email\":\"invalid-email\"}", "expected": 400, "scenario": "Invalid email format" },
+      { "name": "Forgot Password - Empty Email", "body": "{\"email\":\"\"}", "expected": 400, "scenario": "Empty email field" }
+    ]
+  }
+}

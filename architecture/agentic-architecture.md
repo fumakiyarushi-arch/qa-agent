@@ -12,7 +12,7 @@ This modular approach improves scalability, maintainability, and automation effi
 
 ## Agents in the System
 
-The system consists of four main agents:
+The system consists of five main agents:
 
 ### 1. Test Case Agent
 
@@ -74,6 +74,21 @@ A structured bug report ready for the development team.
 
 ---
 
+### 5. UI Design Test Agent
+
+The UI Design Test Agent evaluates the application's user interface for design quality and usability.
+
+Responsibilities:
+
+* Analyze UI layout and visual elements
+* Verify consistency with design standards
+* Identify accessibility and responsiveness issues
+
+Output:
+UI design evaluation and bug reports.
+
+---
+
 ## Architecture Flow
 
 API Input
@@ -83,6 +98,8 @@ Test Case Agent
 Execution Agent
 ↓
 Result Analyzer Agent
+↓
+UI Design Test Agent
 ↓
 Bug Report Agent
 
@@ -118,6 +135,12 @@ The following diagram illustrates how the agents collaborate within the QA Agent
         +-----------------------+
         | Result Analyzer Agent |
         | Validates Responses   |
+        +--------+--------------+
+                 |
+                 v
+        +-----------------------+
+        |  UI Design Test Agent |
+        | Tests Layout & UI     |
         +--------+--------------+
                  |
                  v

@@ -12,10 +12,11 @@ It compares the expected outcomes with the actual API responses.
 
 The Result Analyzer Agent performs the following tasks:
 
-* Validate API responses
+* Validate API and UI responses
 * Compare expected results with actual results
 * Determine test pass or fail status
-* Identify potential issues in API behavior
+* Identify potential issues in API behavior and UI consistency
+* Consolidate findings into a Comprehensive QA Report
 
 ---
 
@@ -30,7 +31,7 @@ The Result Analyzer Agent performs the following tasks:
 
 ## Input
 
-Execution results from the Execution Agent.
+Execution results from the Execution Agent and visual evaluation from the UI Design Test Agent.
 
 ---
 

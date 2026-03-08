@@ -154,9 +154,60 @@ $($loginResult.body)
 }
 ```
 
-### Step 4: Generate Final Report
+### Step 5: UI Flow Testing (Separate & Fast)
 
-Create `qa-final-report.md` with test outcomes and Linear issue links.
+The agent performs **4 separate High-Speed UI recordings** for each core feature. **Social Login/Signup must be EXCLUDED.**
+
+1. **Signup Flow Audit Recording**
+   - URL: `https://staging.swisstrustlayer.com/signup`
+   - Capture: Negative (Empty, Weak PW, Invalid Email) + Positive entry.
+   - Recording Name: `signup_fast_pos_neg_{TIMESTAMP}`
+
+2. **Login Flow Audit Recording**
+   - URL: `https://staging.swisstrustlayer.com/login`
+   - Capture: Negative (Invalid Credentials, Missing PW) + Positive entry.
+   - Recording Name: `login_fast_pos_neg_{TIMESTAMP}`
+
+3. **Forgot Password Flow Audit Recording**
+   - URL: `https://staging.swisstrustlayer.com/forgot-password`
+   - Capture: Negative (Invalid format, non-existent user) + Positive entry.
+   - Recording Name: `forgot_password_fast_pos_neg_{TIMESTAMP}`
+
+4. **UI Responsive Audit Recording**
+   - URL: `https://staging.swisstrustlayer.com/` (Navigating to all 4 pages at 375px wide)
+   - Capture: Layout stacking and header behavior on mobile.
+   - Recording Name: `responsive_fast_check_{TIMESTAMP}`
+
+### Step 6: Generate Multi-Feature QA-Report.md
+
+The Result Analyzer Agent updates `QA-Report.md` using the new `qa-report-template.md`. Each section will have its own dedicated video path.
+
+---
+
+## 🎥 Video Speed Requirement
+To ensure production-level speed:
+- Use direct navigate/type/click without delays.
+- Do not perform any social login interactions.
+- Recording should only capture the manual interaction flow.
+
+---
+
+## Final Goal
+
+The agent will deliver a report with **4 dedicated videos**:
+1. **Manual Signup Flow Audit**
+2. **Manual Login Flow Audit**
+3. **Manual Forgot Password Flow Audit**
+4. **UI Response Flow Audit (All Pages)**
+
+---
+
+## 🐞 Linear Integration
+For every failure (API or UI), a high-priority bug is created in Linear with:
+- Summary of the expected vs actual data.
+- **Concrete Proof**: An exact screenshot of the error state (404, 400, validation overlay) automatically captured and directly embedded in the ticket comments.
+- The specific JSON Request/Response payload.
+- Direct link to the issue in the final report.
 
 ---
 

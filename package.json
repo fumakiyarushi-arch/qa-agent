@@ -1,0 +1,30 @@
+{
+  "name": "qa-agentic-flow",
+  "version": "1.0.0",
+  "description": "The QA Agentic Flow System is a conceptual framework that demonstrates how AI agents can collaborate to automate the API testing lifecycle.",
+  "main": "index.js",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fumakiyarushi-arch/qa-agent.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/fumakiyarushi-arch/qa-agent/issues"
+  },
+  "homepage": "https://github.com/fumakiyarushi-arch/qa-agent#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.58.2"
+  },
+  "dependencies": {
+    "@linear/sdk": "^76.0.0"
+  }
+}
