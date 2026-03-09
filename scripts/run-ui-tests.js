@@ -19,8 +19,12 @@ const SCREENSHOT_DIR = 'qa-reports/screenshots';
 
 const videoMap   = {};
 const allUiBugs  = [];
-// screenshotMap: maps a test/scenario key -> absolute screenshot path (for API bugs)
 const screenshotMap = {};
+let saveScreenshots = false;
+
+function enableScreenshotSaving() {
+  saveScreenshots = true;
+}
 
 // ─────────────────────────────────────────────
 // Helpers
@@ -61,10 +65,12 @@ async function runFlow(flowName, testFn) {
   return flowBugs;
 }
 
-async function screenshot(page, name) {
+async function screenshot(page, name, forceSave = false) {
   const p = path.resolve(SCREENSHOT_DIR, `${name}-${Date.now()}.png`);
-  await page.screenshot({ path: p, fullPage: true });
-  console.log(`📸 Screenshot saved: ${path.basename(p)}`);
+  if (saveScreenshots || forceSave) {
+    await page.screenshot({ path: p, fullPage: true });
+    console.log(`📸 Screenshot saved: ${path.basename(p)}`);
+  }
   return p;
 }
 
@@ -88,11 +94,6 @@ async function signupFlow(page, bugs) {
   await page.goto(`${BASE_URL}/signup`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(2000);
 
-  const ss_loaded = await screenshot(page, 'signup-page-loaded');
-  screenshotMap['Signup - Valid']          = ss_loaded;
-  screenshotMap['Signup - Missing Email']  = ss_loaded;
-  screenshotMap['Signup - Missing Password'] = ss_loaded;
-
   const emailInput    = page.locator('input[type="email"], input[name*="email"], input[placeholder*="email" i]').first();
   const passwordInput = page.locator('input[type="password"]').first();
   const nameInput     = page.locator('input[name*="full" i], input[name*="name" i], input[placeholder*="name" i]').first();
@@ -108,11 +109,11 @@ async function signupFlow(page, bugs) {
       await btn.click({ force: true });
       await page.waitForTimeout(2000);
     }
-    const ss = await screenshot(page, 'signup-invalid-email');
-    screenshotMap['Signup - Invalid Email'] = ss;
 
     const emailError = await page.locator('text=/invalid|valid email|format|not valid/i').count() > 0;
     if (!emailError) {
+      enableScreenshotSaving();
+      const ss = await screenshot(page, 'signup-invalid-email', true);
       bugs.push({
         title: '[Signup] Invalid email format accepted without validation error',
         description: 'Signup form does not show error for "invalid-email-format".',
@@ -132,12 +133,11 @@ async function signupFlow(page, bugs) {
       await btn.click({ force: true });
       await page.waitForTimeout(2000);
     }
-    const ss = await screenshot(page, 'signup-weak-password');
-    screenshotMap['Signup - Weak Password']    = ss;
-    screenshotMap['Signup - Missing Fullname'] = ss;
 
     const pwdError = await page.locator('text=/weak|password|strong|character|minimum/i').count() > 0;
     if (!pwdError) {
+      enableScreenshotSaving();
+      const ss = await screenshot(page, 'signup-weak-password', true);
       bugs.push({
         title: '[Signup] Weak password accepted without validation warning',
         description: 'Password "123" accepted without weak password warning.',
@@ -146,13 +146,6 @@ async function signupFlow(page, bugs) {
       });
     }
   }
-
-  const ss_final = await screenshot(page, 'signup-flow-final');
-  // Fallback screenshot for any signup key not yet mapped
-  ['Signup - Valid', 'Signup - Missing Email', 'Signup - Missing Password', 'Signup - Invalid Email',
-   'Signup - Weak Password', 'Signup - Missing Fullname'].forEach(k => {
-    if (!screenshotMap[k]) screenshotMap[k] = ss_final;
-  });
 }
 
 // ─────────────────────────────────────────────
@@ -162,15 +155,10 @@ async function loginFlow(page, bugs) {
   await page.goto(`${BASE_URL}/login`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(2000);
 
-  const ss_loaded = await screenshot(page, 'login-page-loaded');
-  screenshotMap['Login - Missing Email']    = ss_loaded;
-  screenshotMap['Login - Missing Password'] = ss_loaded;
-  screenshotMap['Login - Empty Body']       = ss_loaded;
-
   const emailInput    = page.locator('input[type="email"], input[name*="email"], input[placeholder*="email" i]').first();
   const passwordInput = page.locator('input[type="password"]').first();
 
-  // Scenario: Valid user login (for finding valid-login API bug screenshot)
+  // Scenario: Valid user login
   if (await emailInput.count() > 0) {
     await emailInput.fill('virat_india@yopmail.com');
     if (await passwordInput.count() > 0) await passwordInput.fill('Test@123');
@@ -180,8 +168,6 @@ async function loginFlow(page, bugs) {
       await btn.click({ force: true });
       await page.waitForTimeout(2500);
     }
-    const ss_valid = await screenshot(page, 'login-valid-attempt');
-    screenshotMap['Login - Valid'] = ss_valid;
   }
 
   // Reload page for next scenario
@@ -198,12 +184,11 @@ async function loginFlow(page, bugs) {
       await btn.click({ force: true });
       await page.waitForTimeout(2500);
     }
-    const ss = await screenshot(page, 'login-invalid-creds');
-    screenshotMap['Login - Invalid Email']    = ss;
-    screenshotMap['Login - Invalid Password'] = ss;
 
     const hasError = await page.locator('text=/invalid|incorrect|not found|wrong|failed|unauthorized/i').count() > 0;
     if (!hasError) {
+      enableScreenshotSaving();
+      const ss = await screenshot(page, 'login-invalid-creds', true);
       bugs.push({
         title: '[Login] No error message shown for invalid credentials',
         description: 'Logging in with wrong email/password shows no error feedback.',
@@ -212,12 +197,6 @@ async function loginFlow(page, bugs) {
       });
     }
   }
-
-  const ss_final = await screenshot(page, 'login-flow-final');
-  ['Login - Valid', 'Login - Invalid Email', 'Login - Invalid Password',
-   'Login - Missing Email', 'Login - Missing Password', 'Login - Empty Body'].forEach(k => {
-    if (!screenshotMap[k]) screenshotMap[k] = ss_final;
-  });
 }
 
 // ─────────────────────────────────────────────
@@ -227,13 +206,9 @@ async function forgotPasswordFlow(page, bugs) {
   await page.goto(`${BASE_URL}/forgot-password`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(2000);
 
-  const ss_loaded = await screenshot(page, 'forgot-password-page-loaded');
-  screenshotMap['Forgot Password - Missing Email']       = ss_loaded;
-  screenshotMap['Forgot Password - Empty Email']         = ss_loaded;
-
   const emailInput = page.locator('input[type="email"], input[name*="email"], input[placeholder*="email" i]').first();
 
-  // Scenario: Valid email (to capture screenshot for valid email API test)
+  // Scenario: Valid email
   if (await emailInput.count() > 0) {
     await emailInput.fill('virat_india@yopmail.com');
     await page.waitForTimeout(400);
@@ -242,8 +217,6 @@ async function forgotPasswordFlow(page, bugs) {
       await btn.click({ force: true });
       await page.waitForTimeout(2000);
     }
-    const ss_valid = await screenshot(page, 'forgot-password-valid-email');
-    screenshotMap['Forgot Password - Valid Email'] = ss_valid;
   }
 
   // Reload for next scenario
@@ -259,8 +232,6 @@ async function forgotPasswordFlow(page, bugs) {
       await btn.click({ force: true });
       await page.waitForTimeout(2000);
     }
-    const ss_notfound = await screenshot(page, 'forgot-password-nonexistent-email');
-    screenshotMap['Forgot Password - Invalid Email'] = ss_notfound;
   }
 
   // Reload for invalid format
@@ -276,11 +247,11 @@ async function forgotPasswordFlow(page, bugs) {
       await btn.click({ force: true });
       await page.waitForTimeout(2000);
     }
-    const ss = await screenshot(page, 'forgot-password-invalid-format');
-    screenshotMap['Forgot Password - Invalid Email Format'] = ss;
 
     const hasError = await page.locator('text=/invalid|valid email|format/i').count() > 0;
     if (!hasError) {
+      enableScreenshotSaving();
+      const ss = await screenshot(page, 'forgot-password-invalid-format', true);
       bugs.push({
         title: '[Forgot Password] Invalid email format not validated',
         description: 'The forgot-password form accepts "not-a-real-email" without an error.',
@@ -289,12 +260,6 @@ async function forgotPasswordFlow(page, bugs) {
       });
     }
   }
-
-  const ss_final = await screenshot(page, 'forgot-password-flow-final');
-  ['Forgot Password - Valid Email', 'Forgot Password - Invalid Email', 'Forgot Password - Missing Email',
-   'Forgot Password - Invalid Email Format', 'Forgot Password - Empty Email'].forEach(k => {
-    if (!screenshotMap[k]) screenshotMap[k] = ss_final;
-  });
 }
 
 // ─────────────────────────────────────────────
@@ -322,8 +287,9 @@ async function uiResponsiveFlow(page, bugs) {
         document.body.scrollWidth > window.innerWidth
       );
 
-      const ss = await screenshot(page, `responsive-${vp.label.toLowerCase()}-${p.name.toLowerCase().replace(/ /g, '-')}`);
       if (isOverflowing) {
+        enableScreenshotSaving();
+        const ss = await screenshot(page, `responsive-${vp.label.toLowerCase()}-${p.name.toLowerCase().replace(/ /g, '-')}`, true);
         bugs.push({
           title: `[UI Responsive] Horizontal overflow on ${p.name} at ${vp.label} (${vp.width}px)`,
           description: `${p.name} page has horizontal scroll at ${vp.label} (${vp.width}px) — broken layout.`,

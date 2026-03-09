@@ -29,6 +29,15 @@ $AssigneeId = '1c022279-12c1-47cf-98f4-97d23f9608b8'
 $BugLabelId = '7702c998-d45b-47dd-ae06-4439693f8b98'
 $useLinear  = -not $SkipLinear -and $LinearApiKey -and $TeamId -and $ProjectId
 
+# Clean up old UI screenshots (keep API error screenshots)
+Write-Host '[Cleanup] Removing old UI screenshots...' -ForegroundColor Yellow
+if (Test-Path 'qa-reports/screenshots') {
+    Get-ChildItem 'qa-reports/screenshots' -File | Remove-Item -Force
+    Write-Host '  Old UI screenshots deleted.' -ForegroundColor Green
+} else {
+    Write-Host '  No old screenshots to clean.' -ForegroundColor Gray
+}
+
 # Ensure output directories exist
 @('qa-reports', 'qa-reports/videos', 'qa-reports/screenshots', 'qa-reports/ui-results', 'qa-reports/api-screenshots') | ForEach-Object {
     if (-not (Test-Path $_)) { New-Item -ItemType Directory -Path $_ -Force | Out-Null }
@@ -347,6 +356,22 @@ $testResults += Test-API "Signup - Missing Password" "$BaseUrl/signup" '{"role":
 $testResults += Test-API "Signup - Invalid Email"   "$BaseUrl/signup" '{"role":"individual","platform":"web","fullname":"Test User","email":"invalid-email","password":"Test@123","mobile_number":"2025550003","country_code":"+1"}' 400 "Invalid email format"
 $testResults += Test-API "Signup - Weak Password"   "$BaseUrl/signup" '{"role":"individual","platform":"web","fullname":"Test User","email":"test3@yopmail.com","password":"123","mobile_number":"2025550004","country_code":"+1"}' 400 "Weak password"
 $testResults += Test-API "Signup - Missing Fullname" "$BaseUrl/signup" '{"role":"individual","platform":"web","email":"test4@yopmail.com","password":"Test@123","mobile_number":"2025550005","country_code":"+1"}' 400 "Missing fullname field"
+$testResults += Test-API "Signup - Duplicate Email" "$BaseUrl/signup" '{"role":"individual","platform":"web","fullname":"Virat Kohli","email":"virat_india@yopmail.com","password":"Test@123","mobile_number":"2025550099","country_code":"+1"}' 409 "Email already exists"
+$testResults += Test-API "Signup - Invalid Role" "$BaseUrl/signup" '{"role":"invalid_role","platform":"web","fullname":"Test User","email":"test10@yopmail.com","password":"Test@123","mobile_number":"2025550010","country_code":"+1"}' 400 "Invalid role value"
+$testResults += Test-API "Signup - Invalid Platform" "$BaseUrl/signup" '{"role":"individual","platform":"invalid_platform","fullname":"Test User","email":"test11@yopmail.com","password":"Test@123","mobile_number":"2025550011","country_code":"+1"}' 400 "Invalid platform value"
+$testResults += Test-API "Signup - Missing Role" "$BaseUrl/signup" '{"platform":"web","fullname":"Test User","email":"test12@yopmail.com","password":"Test@123","mobile_number":"2025550012","country_code":"+1"}' 400 "Missing role field"
+$testResults += Test-API "Signup - Missing Platform" "$BaseUrl/signup" '{"role":"individual","fullname":"Test User","email":"test13@yopmail.com","password":"Test@123","mobile_number":"2025550013","country_code":"+1"}' 400 "Missing platform field"
+$testResults += Test-API "Signup - Missing Mobile Number" "$BaseUrl/signup" '{"role":"individual","platform":"web","fullname":"Test User","email":"test14@yopmail.com","password":"Test@123","country_code":"+1"}' 400 "Missing mobile_number field"
+$testResults += Test-API "Signup - Missing Country Code" "$BaseUrl/signup" '{"role":"individual","platform":"web","fullname":"Test User","email":"test15@yopmail.com","password":"Test@123","mobile_number":"2025550015"}' 400 "Missing country_code field"
+$testResults += Test-API "Signup - Invalid Country Code" "$BaseUrl/signup" '{"role":"individual","platform":"web","fullname":"Test User","email":"test16@yopmail.com","password":"Test@123","mobile_number":"2025550016","country_code":"999"}' 400 "Invalid country code format"
+$testResults += Test-API "Signup - Invalid Mobile Number Format" "$BaseUrl/signup" '{"role":"individual","platform":"web","fullname":"Test User","email":"test17@yopmail.com","password":"Test@123","mobile_number":"abc","country_code":"+1"}' 400 "Invalid mobile number format"
+$testResults += Test-API "Signup - Password Too Short" "$BaseUrl/signup" '{"role":"individual","platform":"web","fullname":"Test User","email":"test18@yopmail.com","password":"Aa1!","mobile_number":"2025550018","country_code":"+1"}' 400 "Password below minimum length"
+$testResults += Test-API "Signup - Password Too Long" "$BaseUrl/signup" '{"role":"individual","platform":"web","fullname":"Test User","email":"test19@yopmail.com","password":"Test@1234567890123456789012345678901234567890123456789012345678901234567890","mobile_number":"2025550019","country_code":"+1"}' 400 "Password exceeds maximum length"
+$testResults += Test-API "Signup - Special Characters in Name" "$BaseUrl/signup" '{"role":"individual","platform":"web","fullname":"Test <User> & Co","email":"test20@yopmail.com","password":"Test@123","mobile_number":"2025550020","country_code":"+1"}' 400 "Special characters in fullname"
+$testResults += Test-API "Signup - Empty String Fields" "$BaseUrl/signup" '{"role":"individual","platform":"web","fullname":"","email":"","password":"Test@123","mobile_number":"2025550021","country_code":"+1"}' 400 "Empty string values"
+$testResults += Test-API "Signup - Whitespace Only Fields" "$BaseUrl/signup" '{"role":"individual","platform":"web","fullname":"   ","email":"   ","password":"Test@123","mobile_number":"2025550022","country_code":"+1"}' 400 "Whitespace only values"
+$testResults += Test-API "Signup - SQL Injection Attempt in Email" "$BaseUrl/signup" '{"role":"individual","platform":"web","fullname":"Test User","email":"test21@yopmail.com OR 1=1","password":"Test@123","mobile_number":"2025550023","country_code":"+1"}' 400 "SQL injection attempt in email"
+$testResults += Test-API "Signup - XSS Attempt in Fullname" "$BaseUrl/signup" '{"role":"individual","platform":"web","fullname":"<script>alert(1)</script>","email":"test22@yopmail.com","password":"Test@123","mobile_number":"2025550024","country_code":"+1"}' 400 "XSS attempt in fullname"
 
 Write-Host "`n  === Login API Tests ===" -ForegroundColor Cyan
 $testResults += Test-API "Login - Valid"            "$BaseUrl/login" '{"email":"virat_india@yopmail.com","password":"Test@123","role":"individual"}' 200 "Valid login request"
@@ -355,6 +380,16 @@ $testResults += Test-API "Login - Invalid Password" "$BaseUrl/login" '{"email":"
 $testResults += Test-API "Login - Missing Email"    "$BaseUrl/login" '{"password":"Test@123","role":"individual"}' 400 "Missing email field"
 $testResults += Test-API "Login - Missing Password" "$BaseUrl/login" '{"email":"virat_india@yopmail.com","role":"individual"}' 400 "Missing password field"
 $testResults += Test-API "Login - Empty Body"       "$BaseUrl/login" '{}' 400 "Empty request body"
+$testResults += Test-API "Login - Email Case Sensitivity" "$BaseUrl/login" '{"email":"VIRAT_INDIA@yopmail.com","password":"Test@123","role":"individual"}' 200 "Email case sensitivity check"
+$testResults += Test-API "Login - Password Case Sensitivity" "$BaseUrl/login" '{"email":"virat_india@yopmail.com","password":"test@123","role":"individual"}' 401 "Password case sensitivity check"
+$testResults += Test-API "Login - SQL Injection in Email" "$BaseUrl/login" '{"email":"admin@yopmail.com OR 1=1","password":"Test@123","role":"individual"}' 400 "SQL injection attempt in email"
+$testResults += Test-API "Login - SQL Injection in Password" "$BaseUrl/login" '{"email":"virat_india@yopmail.com","password":"admin'--","role":"individual"}' 400 "SQL injection attempt in password"
+$testResults += Test-API "Login - Extra Fields" "$BaseUrl/login" '{"email":"virat_india@yopmail.com","password":"Test@123","role":"individual","extra_field":"should_be_ignored","another_field":123}' 200 "Extra fields should be ignored"
+$testResults += Test-API "Login - Whitespace in Email" "$BaseUrl/login" '{"email":"  virat_india@yopmail.com  ","password":"Test@123","role":"individual"}' 400 "Email with whitespace"
+$testResults += Test-API "Login - Whitespace in Password" "$BaseUrl/login" '{"email":"virat_india@yopmail.com","password":"  Test@123  ","role":"individual"}' 401 "Password with whitespace"
+$testResults += Test-API "Login - Very Long Email" "$BaseUrl/login" '{"email":"verylongemailthatgoesbeyondnormaladdresssize12345678901234567890123456789012345678901234567890@yopmail.com","password":"Test@123","role":"individual"}' 400 "Email exceeds reasonable length"
+$testResults += Test-API "Login - Very Long Password" "$BaseUrl/login" '{"email":"virat_india@yopmail.com","password":"VeryLongPasswordThatExceedsTheMaximumExpectedLength123456789012345678901234567890","role":"individual"}' 400 "Password exceeds reasonable length"
+$testResults += Test-API "Login - Multiple Failed Attempts" "$BaseUrl/login" '{"email":"virat_india@yopmail.com","password":"WrongPass1","role":"individual"}' 429 "Rate limiting after multiple attempts"
 
 Write-Host "`n  === Forgot Password API Tests ===" -ForegroundColor Cyan
 $testResults += Test-API "Forgot Password - Valid Email"        "$BaseUrl/forgot-password" '{"email":"virat_india@yopmail.com"}' 200 "Valid email for password reset"
@@ -362,6 +397,11 @@ $testResults += Test-API "Forgot Password - Invalid Email"      "$BaseUrl/forgot
 $testResults += Test-API "Forgot Password - Missing Email"      "$BaseUrl/forgot-password" '{}' 400 "Missing email field"
 $testResults += Test-API "Forgot Password - Invalid Email Format" "$BaseUrl/forgot-password" '{"email":"invalid-email"}' 400 "Invalid email format"
 $testResults += Test-API "Forgot Password - Empty Email"        "$BaseUrl/forgot-password" '{"email":""}' 400 "Empty email field"
+$testResults += Test-API "Forgot Password - SQL Injection Attempt" "$BaseUrl/forgot-password" '{"email":"test@yopmail.com OR 1=1"}' 400 "SQL injection attempt in email"
+$testResults += Test-API "Forgot Password - Very Long Email"    "$BaseUrl/forgot-password" '{"email":"verylongemailaddressthatiswaytoolong12345678901234567890123456789012345678901234567890@yopmail.com"}' 400 "Email exceeds reasonable length"
+$testResults += Test-API "Forgot Password - Email with Whitespace" "$BaseUrl/forgot-password" '{"email":"  virat_india@yopmail.com  "}' 400 "Email with surrounding whitespace"
+$testResults += Test-API "Forgot Password - Email with Leading Spaces" "$BaseUrl/forgot-password" '{"email":" virat_india@yopmail.com"}' 400 "Email with leading spaces"
+$testResults += Test-API "Forgot Password - Email with Trailing Spaces" "$BaseUrl/forgot-password" '{"email":"virat_india@yopmail.com "}' 400 "Email with trailing spaces"
 
 $testResults | ConvertTo-Json -Depth 10 | Out-File 'qa-reports/all-tests-result.json' -Encoding utf8
 
@@ -450,7 +490,7 @@ foreach ($test in $testResults) {
             $formattedResp = ""
             try { $formattedResp = $test.response | ConvertFrom-Json | ConvertTo-Json -Depth 10 } catch { $formattedResp = $test.response }
             
-            $d = "## API Bug Report`n`n**Test:** $($test.name)`n**Scenario:** $($test.scenario)`n`n### Expected vs Actual`n- Expected HTTP: **$($test.expected)**`n- Got HTTP: **$($test.actual)**`n`n### Request`n``````json`n$formattedReq`n```````n`n### Response`n``````$formattedResp`n```````n`n### Priority: $p | Severity: $s`n`n> Bug automatically created by QA Agentic Flow"
+            $d = "API Bug Report`n`nTest: $($test.name)`nScenario: $($test.scenario)`n`nExpected vs Actual`n- Expected HTTP: $($test.expected)`n- Got HTTP: $($test.actual)`n`nRequest`n``````json`n$formattedReq`n```````n`nResponse`n``````$formattedResp`n```````n`nPriority: $p | Severity: $s`n`n> Bug automatically created by QA Agentic Flow"
             $bugs += @{ title = $t; desc = $d; pv = $PM[$p]; p = $p; screenshot = $ssPath; htmlFile = $htmlPath; type = 'api' }
             Write-Host "  [NEW API BUG] $($test.name) | Priority: $p | Visual Error Page: YES" -ForegroundColor Green
         }
@@ -464,7 +504,7 @@ if ($uiResults.bugs -and $uiResults.bugs.Count -gt 0) {
         if ($isDup) {
             Write-Host "  [DUPLICATE UI] $($uiBug.title)" -ForegroundColor Yellow
         } else {
-            $d = "## UI Bug Report`n`n**Title:** $($uiBug.title)`n`n### Description`n$($uiBug.description)`n`n### Steps to Reproduce`n$($uiBug.steps)`n`n### Visual Evidence`nScreenshot captured during automated testing.`n`n> Bug automatically created by QA Agentic Flow"
+            $d = "UI Bug Report`n`nTitle: $($uiBug.title)`n`nDescription`n$($uiBug.description)`n`nSteps to Reproduce`n$($uiBug.steps)`n`nVisual Evidence`nScreenshot captured during automated testing.`n`n> Bug automatically created by QA Agentic Flow"
             $bugs += @{ title = $uiBug.title; desc = $d; pv = 2; p = 'High'; screenshot = $uiBug.screenshot; type = 'ui' }
             Write-Host "  [NEW UI BUG] $($uiBug.title)" -ForegroundColor Green
         }
@@ -521,21 +561,52 @@ if ($useLinear -and $bugs.Count -gt 0) {
                             Write-Host "    📤 Uploaded: $assetUrl" -ForegroundColor Gray
 
                             $visualLabel = if ($b.type -eq 'api') { "API Error Visual" } else { "UI Screenshot" }
-                            $commentBody = "## $visualLabel Evidence
+                            $commentBody = "**$visualLabel Evidence**
 
 Automatically generated by QA Agentic Flow.
 
 ![]($assetUrl)
 
 > Test: $($b.title)"
-                            $commentEscaped = $commentBody -replace '\\', '\\\\' -replace '"', '\"'
-                            $commentMutation = @{
-                                query = "mutation { commentCreate(input:{issueId:`"$($issue.id)`",body:`"$commentEscaped`"}){success}}"
-                            } | ConvertTo-Json -Depth 5
-                            $cr   = Invoke-WebRequest -Uri 'https://api.linear.app/graphql' -Method POST -Headers $reqHeaders -Body $commentMutation -UseBasicParsing
-                            $cres = $cr.Content | ConvertFrom-Json
-                            if ($cres.data.commentCreate.success) {
-                                Write-Host "    Screenshot attached to $($issue.identifier)" -ForegroundColor Cyan
+                            
+                            function Escape-GraphQLString($str) {
+                                return $str -replace '\\', '\\\\' -replace '"', '\"' -replace "`n", '\n' -replace "`r", '\r' -replace '`', '\`'
+                            }
+                            $commentEscaped = Escape-GraphQLString $commentBody
+                            
+                            $maxRetries = 3
+                            $retryCount = 0
+                            $commentSuccess = $false
+                            
+                            while ($retryCount -lt $maxRetries -and -not $commentSuccess) {
+                                try {
+                                    $commentMutation = @{
+                                        query = "mutation { commentCreate(input:{issueId:`"$($issue.id)`",body:`"$commentEscaped`"}){success}}"
+                                    } | ConvertTo-Json -Depth 5
+                                    $cr = Invoke-WebRequest -Uri 'https://api.linear.app/graphql' -Method POST -Headers $reqHeaders -Body $commentMutation -UseBasicParsing
+                                    $cres = $cr.Content | ConvertFrom-Json
+                                    
+                                    if ($cres.data.commentCreate.success) {
+                                        $commentSuccess = $true
+                                        Write-Host "    Screenshot attached to $($issue.identifier)" -ForegroundColor Cyan
+                                    } elseif ($cres.errors) {
+                                        $errMsg = $cres.errors[0].message
+                                        Write-Host "    Attach attempt $($retryCount + 1) failed: $errMsg" -ForegroundColor Yellow
+                                        if ($retryCount -lt ($maxRetries - 1)) {
+                                            Start-Sleep -Seconds 2
+                                        }
+                                    }
+                                } catch {
+                                    Write-Host "    Attach attempt $($retryCount + 1) error: $($_.Exception.Message.Split([char]10)[0])" -ForegroundColor Yellow
+                                    if ($retryCount -lt ($maxRetries - 1)) {
+                                        Start-Sleep -Seconds 2
+                                    }
+                                }
+                                $retryCount++
+                            }
+                            
+                            if (-not $commentSuccess) {
+                                Write-Host "    Failed to attach screenshot after $maxRetries attempts" -ForegroundColor Red
                             }
                         }
                     } catch {
@@ -558,24 +629,24 @@ Write-Host '[Step 5/5] Generating Enhanced QA-Report.md...' -ForegroundColor Yel
 $now = (Get-Date).ToString('yyyy-MM-dd HH:mm')
 $lines = [System.Collections.Generic.List[string]]::new()
 
-$lines.Add("# QA Report - $now")
+$lines.Add("QA Report - $now")
 $lines.Add('')
-$lines.Add('---')
+$lines.Add('============================================')
 $lines.Add('')
-$lines.Add('## 📊 Executive Summary')
+$lines.Add('EXECUTIVE SUMMARY')
 $lines.Add('')
 $lines.Add("| Metric | Count |")
 $lines.Add("|--------|-------|")
 $lines.Add("| Total API Tests | $($testResults.Count) |")
-$lines.Add("| ✅ API Passed | $passed |")
-$lines.Add("| ❌ API Failed | $failed |")
-$lines.Add("| 🖥️ UI Bugs Found | $($uiResults.summary.total) |")
-$lines.Add("| 🐛 Total Bugs Created | $($bugs.Count) |")
-$lines.Add("| 📝 Linear Tickets | $($issues.Count) |")
+$lines.Add("| [+] API Passed | $passed |")
+$lines.Add("| [x] API Failed | $failed |")
+$lines.Add("| [=] UI Bugs Found | $($uiResults.summary.total) |")
+$lines.Add("| [#] Total Bugs Created | $($bugs.Count) |")
+$lines.Add("| [@] Linear Tickets | $($issues.Count) |")
 $lines.Add('')
-$lines.Add('---')
+$lines.Add('============================================')
 $lines.Add('')
-$lines.Add('## 🎥 Feature Testing Video Recordings')
+$lines.Add('FEATURE TESTING VIDEO RECORDINGS')
 $lines.Add('')
 
 $videoSection = @(
@@ -589,80 +660,80 @@ foreach ($v in $videoSection) {
     $videoFile = "qa-reports/videos/$($v.key.ToLower().Replace(' ', '-')).webm"
     if (Test-Path $videoFile) {
         $absPath = (Resolve-Path $videoFile).Path
-        $lines.Add("- 🎥 **$($v.flow):** [Watch Recording](file:///$($absPath.Replace('\','/')))")
+        $lines.Add("- [>] $($v.flow): [Watch Recording](file:///$($absPath.Replace('\','/')))")
     } else {
-        $lines.Add("- 🎥 **$($v.flow):** *(video pending)*")
+        $lines.Add("- [>] $($v.flow): (video pending)")
     }
 }
 
 $lines.Add('')
-$lines.Add('---')
+$lines.Add('============================================')
 $lines.Add('')
-$lines.Add('## 🧪 API Test Results')
+$lines.Add('API TEST RESULTS')
 $lines.Add('')
 
 # Signup Tests
-$lines.Add('### Signup API Tests')
+$lines.Add('Signup API Tests')
 $lines.Add('')
 $lines.Add('| Test Case | Expected | Actual | Status | Visual |')
 $lines.Add('|-----------|----------|--------|--------|--------|')
 foreach ($t in ($testResults | Where-Object { $_.name -like 'Signup*' })) {
-    $st = if ($t.success) { '✅ PASS' } else { '❌ FAIL' }
+    $st = if ($t.success) { '[+] PASS' } else { '[x] FAIL' }
     $visual = ''
     if (-not $t.success) {
         $ss = $apiErrorScreenshots[$t.name]
         if ($ss -and (Test-Path $ss)) {
             $ssAbs = (Resolve-Path $ss).Path
-            $visual = "[📷 Error](file:///$($ssAbs.Replace('\','/')))"
+            $visual = "[@ Error](file:///$($ssAbs.Replace('\','/')))"
         } else {
-            $visual = "❌"
+            $visual = "[x]"
         }
     } else {
-        $visual = "—"
+        $visual = "-"
     }
     $lines.Add("| $($t.name) | $($t.expected) | $($t.actual) | $st | $visual |")
 }
 
 $lines.Add('')
-$lines.Add('### Login API Tests')
+$lines.Add('Login API Tests')
 $lines.Add('')
 $lines.Add('| Test Case | Expected | Actual | Status | Visual |')
 $lines.Add('|-----------|----------|--------|--------|--------|')
 foreach ($t in ($testResults | Where-Object { $_.name -like 'Login*' })) {
-    $st = if ($t.success) { '✅ PASS' } else { '❌ FAIL' }
+    $st = if ($t.success) { '[+] PASS' } else { '[x] FAIL' }
     $visual = ''
     if (-not $t.success) {
         $ss = $apiErrorScreenshots[$t.name]
         if ($ss -and (Test-Path $ss)) {
             $ssAbs = (Resolve-Path $ss).Path
-            $visual = "[📷 Error](file:///$($ssAbs.Replace('\','/')))"
+            $visual = "[@ Error](file:///$($ssAbs.Replace('\','/')))"
         } else {
-            $visual = "❌"
+            $visual = "[x]"
         }
     } else {
-        $visual = "—"
+        $visual = "-"
     }
     $lines.Add("| $($t.name) | $($t.expected) | $($t.actual) | $st | $visual |")
 }
 
 $lines.Add('')
-$lines.Add('### Forgot Password API Tests')
+$lines.Add('Forgot Password API Tests')
 $lines.Add('')
 $lines.Add('| Test Case | Expected | Actual | Status | Visual |')
 $lines.Add('|-----------|----------|--------|--------|--------|')
 foreach ($t in ($testResults | Where-Object { $_.name -like 'Forgot*' })) {
-    $st = if ($t.success) { '✅ PASS' } else { '❌ FAIL' }
+    $st = if ($t.success) { '[+] PASS' } else { '[x] FAIL' }
     $visual = ''
     if (-not $t.success) {
         $ss = $apiErrorScreenshots[$t.name]
         if ($ss -and (Test-Path $ss)) {
             $ssAbs = (Resolve-Path $ss).Path
-            $visual = "[📷 Error](file:///$($ssAbs.Replace('\','/')))"
+            $visual = "[@ Error](file:///$($ssAbs.Replace('\','/')))"
         } else {
-            $visual = "❌"
+            $visual = "[x]"
         }
     } else {
-        $visual = "—"
+        $visual = "-"
     }
     $lines.Add("| $($t.name) | $($t.expected) | $($t.actual) | $st | $visual |")
 }
@@ -671,9 +742,9 @@ foreach ($t in ($testResults | Where-Object { $_.name -like 'Forgot*' })) {
 $failedTests = $testResults | Where-Object { -not $_.success }
 if ($failedTests.Count -gt 0) {
     $lines.Add('')
-    $lines.Add('---')
+    $lines.Add('============================================')
     $lines.Add('')
-    $lines.Add('## 🔴 Failed API Tests - Detailed View')
+    $lines.Add('FAILED API TESTS - DETAILED VIEW')
     $lines.Add('')
     
     foreach ($ft in $failedTests) {
@@ -682,28 +753,28 @@ if ($failedTests.Count -gt 0) {
         try { $formattedReq = $ft.body | ConvertFrom-Json | ConvertTo-Json -Depth 5 } catch { $formattedReq = $ft.body }
         try { $formattedResp = $ft.response | ConvertFrom-Json | ConvertTo-Json -Depth 5 } catch { $formattedResp = $ft.response }
         
-        $lines.Add("### ❌ $($ft.name)")
+        $lines.Add("[x] $($ft.name)")
         $lines.Add('')
         $lines.Add("| Property | Value |")
         $lines.Add("|----------|-------|")
-        $lines.Add("| **Scenario** | $($ft.scenario) |")
-        $lines.Add("| **Expected Status** | $($ft.expected) |")
-        $lines.Add("| **Actual Status** | $($ft.actual) |")
-        $lines.Add("| **URL** | $($ft.url) |")
+        $lines.Add("| Scenario | $($ft.scenario) |")
+        $lines.Add("| Expected Status | $($ft.expected) |")
+        $lines.Add("| Actual Status | $($ft.actual) |")
+        $lines.Add("| URL | $($ft.url) |")
         
         $ss = $apiErrorScreenshots[$ft.name]
         if ($ss -and (Test-Path $ss)) {
             $ssAbs = (Resolve-Path $ss).Path
-            $lines.Add("| **Visual Error Page** | [📷 View Screenshot](file:///$($ssAbs.Replace('\','/'))) |")
+            $lines.Add("| Visual Error Page | [@ View Screenshot](file:///$($ssAbs.Replace('\','/'))) |")
         }
         
         $lines.Add('')
-        $lines.Add('**Request Body:**')
+        $lines.Add('Request Body:')
         $lines.Add('```json')
         $lines.Add($formattedReq)
         $lines.Add('```')
         $lines.Add('')
-        $lines.Add('**Response Body:**')
+        $lines.Add('Response Body:')
         $lines.Add('```json')
         $lines.Add($formattedResp)
         $lines.Add('```')
@@ -712,9 +783,9 @@ if ($failedTests.Count -gt 0) {
 }
 
 $lines.Add('')
-$lines.Add('---')
+$lines.Add('============================================')
 $lines.Add('')
-$lines.Add('## 🖥️ UI Test Results (Playwright)')
+$lines.Add('UI TEST RESULTS (PLAYWRIGHT)')
 $lines.Add('')
 
 if ($uiResults.summary.total -gt 0) {
@@ -724,47 +795,47 @@ if ($uiResults.summary.total -gt 0) {
     $lines.Add("| Login Flow | $($uiResults.summary.login) |")
     $lines.Add("| Forgot Password Flow | $($uiResults.summary.forgotPassword) |")
     $lines.Add("| UI Responsive Flow | $($uiResults.summary.uiResponsive) |")
-    $lines.Add("| **Total UI Bugs** | **$($uiResults.summary.total)** |")
+    $lines.Add("| Total UI Bugs | $($uiResults.summary.total) |")
     
     if ($uiResults.bugs -and $uiResults.bugs.Count -gt 0) {
         $lines.Add('')
-        $lines.Add('### UI Bug Details')
+        $lines.Add('UI Bug Details')
         $lines.Add('')
         foreach ($uiBug in $uiResults.bugs) {
-            $lines.Add("#### ❌ $($uiBug.title)")
+            $lines.Add("[x] $($uiBug.title)")
             $lines.Add('')
-            $lines.Add("**Description:** $($uiBug.description)")
+            $lines.Add("Description: $($uiBug.description)")
             $lines.Add('')
-            $lines.Add("**Steps to Reproduce:**")
+            $lines.Add("Steps to Reproduce:")
             $lines.Add('```')
             $lines.Add($uiBug.steps)
             $lines.Add('```')
             if ($uiBug.screenshot -and (Test-Path $uiBug.screenshot)) {
                 $ssAbs = (Resolve-Path $uiBug.screenshot).Path
-                $lines.Add("**Screenshot:** [📷 View](file:///$($ssAbs.Replace('\','/')))")
+                $lines.Add("Screenshot: [@ View](file:///$($ssAbs.Replace('\','/')))")
             }
             $lines.Add('')
         }
     }
 } else {
-    $lines.Add('✅ No UI bugs detected across Signup, Login, Forgot Password, and Responsive flows.')
+    $lines.Add('[+] No UI bugs detected across Signup, Login, Forgot Password, and Responsive flows.')
 }
 
 if ($issues.Count -gt 0) {
     $lines.Add('')
-    $lines.Add('---')
+    $lines.Add('============================================')
     $lines.Add('')
-    $lines.Add('## 🐛 Bugs Created in Linear')
+    $lines.Add('BUGS CREATED IN LINEAR')
     $lines.Add('')
     foreach ($iss in $issues) {
         $b = $iss.bug
-        $lines.Add("### [$($iss.identifier)]($($iss.url)) - $($b.type.ToUpper())")
+        $lines.Add("[$($iss.identifier)]($($iss.url)) - $($b.type.ToUpper())")
         $lines.Add('')
         $lines.Add("| Field | Value |")
         $lines.Add("|-------|-------|")
-        $lines.Add("| **Title** | $($b.title) |")
-        $lines.Add("| **Priority** | $($b.p) |")
-        $lines.Add("| **Type** | $($b.type.ToUpper()) |")
+        $lines.Add("| Title | $($b.title) |")
+        $lines.Add("| Priority | $($b.p) |")
+        $lines.Add("| Type | $($b.type.ToUpper()) |")
         
         $attachmentFile = $b.screenshot
         if (-not $attachmentFile -and $b.htmlFile) {
@@ -775,30 +846,31 @@ if ($issues.Count -gt 0) {
             $ssAbs = (Resolve-Path $attachmentFile).Path
             $ext = [System.IO.Path]::GetExtension($attachmentFile)
             $label = if ($ext -eq '.html') { "Visual Error Page (HTML)" } else { "Screenshot" }
-            $lines.Add("| **$label** | [📷 View](file:///$($ssAbs.Replace('\','/'))) |")
+            $lines.Add("| $label | [@ View](file:///$($ssAbs.Replace('\','/'))) |")
         }
         $lines.Add('')
     }
 }
 
-$lines.Add('---')
 $lines.Add('')
-$lines.Add("## 📁 Generated Artifacts")
+$lines.Add('============================================')
+$lines.Add('')
+$lines.Add("GENERATED ARTIFACTS")
 $lines.Add('')
 $lines.Add('| Directory | Description |')
 $lines.Add('|-----------|-------------|')
-$lines.Add('| `qa-reports/screenshots/` | UI screenshots from Playwright |')
-$lines.Add('| `qa-reports/api-screenshots/` | API error visual pages (PNG/HTML) |')
-$lines.Add('| `qa-reports/videos/` | Video recordings of UI flows |')
-$lines.Add('| `qa-reports/all-tests-result.json` | Complete test results JSON |')
+$lines.Add('| qa-reports/screenshots/ | UI screenshots from Playwright |')
+$lines.Add('| qa-reports/api-screenshots/ | API error visual pages (PNG/HTML) |')
+$lines.Add('| qa-reports/videos/ | Video recordings of UI flows |')
+$lines.Add('| qa-reports/all-tests-result.json | Complete test results JSON |')
 $lines.Add('')
-$lines.Add('---')
+$lines.Add('============================================')
 $lines.Add('')
-$lines.Add("*Generated by QA Agentic Flow on $now*")
+$lines.Add("Generated by QA Agentic Flow on $now")
 
 # Write to QA-Report.md
 $lines | Out-File 'QA-Report.md' -Encoding utf8
-Write-Host '  ✅ Enhanced QA-Report.md saved successfully!' -ForegroundColor Green
+Write-Host '  [+] QA-Report.md saved successfully!' -ForegroundColor Green
 
 Write-Host ''
 Write-Host '========================================' -ForegroundColor Cyan
