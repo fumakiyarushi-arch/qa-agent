@@ -41,3 +41,7 @@ Test analysis results including:
 
 * Pass/Fail status
 * Error details for failed tests
+* QA-Report.md - A comprehensive report containing:
+  * Test results summary
+  * Bug count and severity breakdown
+  * Pass/fail rate and trends
